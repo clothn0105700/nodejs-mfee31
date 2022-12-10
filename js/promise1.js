@@ -19,5 +19,7 @@ let doWorkPromise = function(job, timer){
         return doWorkPromise(`寫功課`, 3000);
     }).then((data) =>{
         console.log(data);
+    }).catch((err) =>{
+        console.log(err);
     })
  
