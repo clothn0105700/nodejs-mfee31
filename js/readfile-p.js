@@ -20,18 +20,17 @@ const { resolve } = require('path');
 let readfile = new Promise((resolve, rejects) => {
     fs.readFile('test.txt', 'utf-8', (err, data) => {
         if (err) {  
-            rejects('發生錯誤', err);
+            rejects(err);
           } else {
-            resolve('成功讀到資料', data);
+            resolve(data);
           }
       });
 })
 
 readfile.then((data) => {
-    console.log(data)
+    console.log('我是then', data)
 }).catch((err) => {
-    console.error(err)
+    console.error('我是catch', err)
 })
-
 
 
