@@ -6,7 +6,11 @@ const axios = require('axios');
 // http://54.71.133.152:3000/stocks?stockNo=2618&date=202211
 
 (async() => {
+    try{
    let response = await axios
     .get('http://54.71.133.152:3000/stocks?stockNo=2618&date=202211')
     console.log(response.data);
+    } catch(err){
+        console.log(err);
+    }
 })();
