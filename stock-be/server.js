@@ -2,8 +2,27 @@ const { request, response } = require('express');
 const express = require('express');
 // 利用 express 這個框架建立一個 web app
 const app = express();
+require('dotenv').config();
 
+const mysql2 = require('mysql2/promise');
+
+let pool = mysql2.createPool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PWD,
+    database: process.env.DB_NAME,
+    // 限制 pool 連線數的上限
+    connectionLimit: 10,
+  });
 //middleware = pipeline pattern
+
+// 設定 express 處理靜態檔案
+// -> express 內建 -> 不需要安裝任何東西
+// localhost:3001/
+// app.use(express.static('./static'));
+// localhost:3001/2048/
+app.use('/2048', express.static('./static'));
 
 // function fnA(){
 //     // TODO:...
@@ -42,6 +61,22 @@ app.get('/',(req, res, next) => {
     res.send('Hello Express 5');
 });
 
+app.get('/api',(req, res, next) => {
+
+    res.json({
+        name: 'John',
+        age: 18,
+    });
+});
+
+app.get('/api/stock',async (req, res, next) => {
+    // let results = await pool.query('SELECT * FROM stock');
+    // let data = results[0];
+
+    let [data] = await pool.query('SELECT * FROM stocks');
+    res.json(data)
+})
+
 app.use((req, res, next) => {
     console.log('這裡是一個中間件 C')
     next();
@@ -64,5 +99,6 @@ app.use((req, res, next) => {
 
 
 app.listen(3001, () => {
-    console.log('Server running at port 3001')
+    console.log('Server running at port 3001') 
+    //log是資源消耗，不可寫太多，寫太少無法得知錯誤在哪，加多加在哪一門學問
 });
