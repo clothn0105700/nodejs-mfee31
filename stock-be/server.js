@@ -15,6 +15,20 @@ let pool = mysql2.createPool({
     // 限制 pool 連線數的上限
     connectionLimit: 10,
   });
+
+// 如果要讓 express 認得 json 資料
+// request Content-Type: application/json
+// 需要加上這個中間件
+app.use(express.json());
+
+  //允許跨源存取
+  //預設是全部開放
+  //也可以做部分限制，參考 cors (npm)
+  const cors = require('cors');
+  app.use(cors({
+    oring: '*', //預設 大多數套件require後需要使用中間件，要如何寫可以看官方文件
+  }));
+
 //middleware = pipeline pattern
 
 // 設定 express 處理靜態檔案
@@ -22,7 +36,12 @@ let pool = mysql2.createPool({
 // localhost:3001/
 // app.use(express.static('./static'));
 // localhost:3001/2048/
-app.use('/2048', express.static('./static'));
+
+app.use('/2048', express.static('./statics'));
+
+// app.use('/fish', express.static('./build')); 
+//去確認申請網站的路徑，react轉build的標頭需要改東西，之後會教，先用以下方法可執行
+// app.use(express.static('./build'));
 
 // function fnA(){
 //     // TODO:...
@@ -69,6 +88,7 @@ app.get('/api',(req, res, next) => {
     });
 });
 
+
 app.get('/api/stock',async (req, res, next) => {
     // let results = await pool.query('SELECT * FROM stock');
     // let data = results[0];
@@ -76,6 +96,40 @@ app.get('/api/stock',async (req, res, next) => {
     let [data] = await pool.query('SELECT * FROM stocks');
     res.json(data)
 })
+// localhost:3001/api/stocks/2330
+// req.params.stockId => 2330
+// SELECT * FROM stock_prices WHERE stock_id=2330
+
+// sql injection
+// localhost:3001/api/stocks/1234 or 1=1;--
+// req.params.stockId => 1234 or 1=1;--
+// SELECT * FROM stock_prices WHERE stock_id=1234 or 1=1;--
+
+// :stockId為變數，[req.params.stockId] --> 取得網址上的變數
+app.get('/api/stocks/:stockId', async (req, res, next) => {
+    // console.log('/api/stocks/:stockId => ', req.params.stockId);
+    // 會用 prepared statement 的方式來避免發生 sql injection
+
+
+    let [data] = await pool.query('SELECT * FROM stock_prices WHERE stock_id=?',[req.params.stockId]);
+    //前端傳過來的為請求req
+    //stockId會對應
+    //query 也可以改用 execute ， 都能防止 sql injection
+    
+    res.json(data)
+});
+
+app.post('/api/stocks', async (req, res) => {
+    console.log('POST /api/stocks', req.body);
+    // req.body.stockId, req.body.stockName
+    // TODO: 完成 insert
+    // let results = await pool.query("");
+    let [results] = await pool.query("INSERT INTO stocks (id, name) VALUES (?,? )", [req.body.stockId, req.body.stockName]);
+    console.log('POST stock results', results);
+    res.json({});
+  });
+  
+
 
 app.use((req, res, next) => {
     console.log('這裡是一個中間件 C')
@@ -93,7 +147,7 @@ app.get('/test',(req, res, next) => {
 // --> 這就是一個 404 的情況
 //利用了中間件會依照程式碼順序來執行的特性
 app.use((req, res, next) => {
-    console.log('這裡是404');
+    console.log('這裡是404', req.method, req.path);
     res.send('沒有這個網站啦');
 });
 
